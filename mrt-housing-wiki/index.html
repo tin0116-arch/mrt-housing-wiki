@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>為什麼捷運站附近的房子比較貴？— LLM Wiki 教學簡報</title>
+  <style>
+    :root {
+      --bg-cream: #FBF9F5;
+      --card-bg: #FFFFFF;
+      --surface-tint: #F5F0E6;
+      --border-subtle: #E8E1D5;
+      --border-dark: #D4C7B5;
+      --text-main: #2C241D;
+      --text-muted: #6B5E52;
+      --text-light: #948677;
+      --gold-accent: #B89047;
+      --gold-light: #FBF4E6;
+      --accent-green: #3D6B4F;
+      --accent-green-bg: #EBF4EE;
+      --accent-red: #A83B3B;
+      --accent-red-bg: #FBEBEB;
+      --shadow-soft: 0 8px 30px rgba(44, 36, 29, 0.06);
+      --font-serif: "Noto Serif TC", "Songti TC", "Baskerville", Georgia, serif;
+      --font-sans: system-ui, -apple-system, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-cream);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+
+    /* Top Progress Bar */
+    .progress-bar-container {
+      width: 100%;
+      height: 4px;
+      background: var(--border-subtle);
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 100;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 10%;
+      background: linear-gradient(90deg, var(--gold-accent), #9E742D);
+      transition: width 0.35s ease;
+    }
+
+    /* Header */
+    header {
+      padding: 16px 36px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(251, 249, 245, 0.95);
+      backdrop-filter: blur(8px);
+      z-index: 90;
+      flex-shrink: 0;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .project-tag {
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: var(--surface-tint);
+      color: var(--gold-accent);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      border: 1px solid var(--border-dark);
+    }
+    .deck-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+    .slide-counter {
+      font-family: var(--font-serif);
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--gold-accent);
+      letter-spacing: 0.05em;
+    }
+
+    /* Presentation Viewport */
+    main.viewport {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateX(30px);
+      transition: opacity 0.35s ease, transform 0.35s ease, visibility 0.35s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 40px;
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(0);
+    }
+
+    .slide-content {
+      width: 100%;
+      max-width: 960px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 44px 52px;
+      box-shadow: var(--shadow-soft);
+      max-height: calc(100vh - 170px);
+      overflow-y: auto;
+    }
+
+    /* Typography */
+    .slide-eyebrow {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold-accent);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .slide-eyebrow::before {
+      content: "";
+      display: inline-block;
+      width: 14px;
+      height: 2px;
+      background: var(--gold-accent);
+    }
+    h2.slide-title {
+      font-family: var(--font-serif);
+      font-size: 1.85rem;
+      font-weight: 700;
+      color: var(--text-main);
+      line-height: 1.35;
+      margin-bottom: 20px;
+    }
+    .slide-lead {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      line-height: 1.65;
+    }
+
+    /* Grid & Cards */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 16px;
+    }
+    .three-col {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-top: 16px;
+    }
+
+    .info-card {
+      background: var(--bg-cream);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+    .info-card.highlight {
+      background: var(--gold-light);
+      border-color: rgba(184, 144, 71, 0.4);
+    }
+    .card-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--gold-accent);
+      margin-bottom: 6px;
+    }
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text-main);
+    }
+    .card-text {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    /* Diagram Elements */
+    .diagram-box {
+      background: var(--surface-tint);
+      border: 1px solid var(--border-dark);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 16px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .zone-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: #FFFFFF;
+      padding: 12px 18px;
+      border-radius: 6px;
+      border-left: 4px solid var(--gold-accent);
+    }
+    .zone-distance {
+      min-width: 140px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text-main);
+    }
+    .zone-value {
+      font-family: var(--font-serif);
+      font-weight: 700;
+      color: var(--gold-accent);
+      font-size: 1.15rem;
+    }
+    .zone-note {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      margin-left: auto;
+    }
+
+    /* Citation badge */
+    .citation-footer {
+      margin-top: 24px;
+      padding-top: 14px;
+      border-top: 1px dashed var(--border-subtle);
+      font-size: 0.82rem;
+      color: var(--text-light);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .citation-footer strong {
+      color: var(--text-muted);
+    }
+    .badge-limit {
+      background: var(--surface-tint);
+      color: var(--text-muted);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border-subtle);
+    }
+
+    /* Interactive Quiz */
+    .quiz-question-block {
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .quiz-question-block:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    .question-title {
+      font-weight: 700;
+      font-size: 1.05rem;
+      margin-bottom: 12px;
+      color: var(--text-main);
+    }
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .quiz-btn {
+      background: var(--bg-cream);
+      border: 1px solid var(--border-dark);
+      padding: 12px 16px;
+      border-radius: 6px;
+      text-align: left;
+      font-size: 0.92rem;
+      color: var(--text-main);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .quiz-btn:hover:not(.disabled) {
+      background: #FFFFFF;
+      border-color: var(--gold-accent);
+    }
+    .quiz-btn.correct {
+      background: var(--accent-green-bg);
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+      font-weight: 600;
+    }
+    .quiz-btn.incorrect {
+      background: var(--accent-red-bg);
+      border-color: var(--accent-red);
+      color: var(--accent-red);
+    }
+    .quiz-feedback {
+      margin-top: 10px;
+      font-size: 0.88rem;
+      padding: 10px 14px;
+      border-radius: 6px;
+      display: none;
+      line-height: 1.5;
+    }
+    .quiz-feedback.show-correct {
+      display: block;
+      background: var(--accent-green-bg);
+      color: var(--accent-green);
+      border: 1px solid rgba(61, 107, 79, 0.2);
+    }
+    .quiz-feedback.show-incorrect {
+      display: block;
+      background: var(--accent-red-bg);
+      color: var(--accent-red);
+      border: 1px solid rgba(168, 59, 59, 0.2);
+    }
+
+    /* Footer & Controls */
+    footer {
+      padding: 14px 36px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--border-subtle);
+      background: rgba(251, 249, 245, 0.95);
+      flex-shrink: 0;
+    }
+    .dots-container {
+      display: flex;
+      gap: 8px;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border-dark);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .dot.active {
+      background: var(--gold-accent);
+      width: 24px;
+      border-radius: 4px;
+    }
+    .nav-controls {
+      display: flex;
+      gap: 10px;
+    }
+    .btn-nav {
+      background: #FFFFFF;
+      border: 1px solid var(--border-dark);
+      color: var(--text-main);
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-nav:hover:not(:disabled) {
+      border-color: var(--gold-accent);
+      color: var(--gold-accent);
+      background: var(--gold-light);
+    }
+    .btn-nav:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Process Flow for Slide 10 */
+    .flow-steps {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin: 18px 0;
+      position: relative;
+    }
+    .flow-step {
+      background: var(--surface-tint);
+      border: 1px solid var(--border-dark);
+      border-radius: 6px;
+      padding: 12px 10px;
+      text-align: center;
+    }
+    .flow-num {
+      font-family: var(--font-serif);
+      font-weight: 700;
+      color: var(--gold-accent);
+      font-size: 0.85rem;
+      margin-bottom: 4px;
+    }
+    .flow-label {
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+    .flow-desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* Links in Slide 10 */
+    .source-link-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .source-link-item {
+      font-size: 0.82rem;
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 10px;
+      background: var(--bg-cream);
+      border-radius: 4px;
+      border: 1px solid var(--border-subtle);
+    }
+    .source-link-item a {
+      color: var(--gold-accent);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .source-link-item a:hover {
+      text-decoration: underline;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      header { padding: 12px 18px; }
+      footer { padding: 10px 18px; }
+      main.viewport { padding: 12px; }
+      .slide { padding: 10px; }
+      .slide-content { padding: 24px 20px; max-height: calc(100vh - 130px); }
+      h2.slide-title { font-size: 1.4rem; }
+      .two-col, .three-col { grid-template-columns: 1fr; gap: 12px; }
+      .flow-steps { grid-template-columns: 1fr; }
+      .zone-row { flex-direction: column; align-items: flex-start; gap: 6px; }
+      .zone-note { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Progress Bar -->
+  <div class="progress-bar-container">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="header-left">
+      <span class="project-tag">MRT Housing Wiki</span>
+      <span class="deck-title">為什麼捷運站附近的房子比較貴？</span>
+    </div>
+    <div class="slide-counter" id="slideCounter">01 / 10</div>
+  </header>
+
+  <!-- Presentation Viewport -->
+  <main class="viewport">
+
+    <!-- Slide 1: 為什麼捷運附近的房子比較貴？ -->
+    <section class="slide active" data-slide="1">
+      <div class="slide-content">
+        <div class="slide-eyebrow">Introduction ｜ 生活觀察與破題</div>
+        <h2 class="slide-title">為什麼捷運站附近的房子比較貴？</h2>
+        <p class="slide-lead">在雙北地區看房或租屋時，我們常發現一個直覺卻耐人尋味的現象：</p>
+        
+        <div class="two-col">
+          <div class="info-card">
+            <div class="card-label">情境 A ｜ 捷運站旁物件</div>
+            <div class="card-title">步行 3 分鐘・每坪單價明顯偏高</div>
+            <p class="card-text">相同屋齡、格局、建材與室內坪數，甚至採光普通的公寓，只要走出家門拐個彎就能進站，開價與租金往往令人咋舌。</p>
+          </div>
+          <div class="info-card">
+            <div class="card-label">情境 B ｜ 外圍巷弄物件</div>
+            <div class="card-title">步行 15 分鐘・每坪單價相對平實</div>
+            <p class="card-text">具備開闊棟距、安靜鄰里與全新裝潢，但因為每天上下班需要轉乘公車或騎車 15 分鐘，單價卻明顯親民許多。</p>
+          </div>
+        </div>
+
+        <div class="diagram-box" style="margin-top:20px;">
+          <div class="card-title" style="margin-bottom:4px;">核心問題意識</div>
+          <p class="card-text">多花這幾百萬元購屋或每月多掏幾千元租金，我們到底「買下了」什麼？這單純是房仲的話術炒作，還是背後存在著嚴謹的不動產經濟學規律？</p>
+        </div>
+
+        <div class="citation-footer">
+          <strong>文獻依據：</strong> 全專案五篇政大學術實證研究導引 ｜ 
+          <span class="badge-limit">讀取範圍：依據官方公開摘要整理</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 2: 交通可及性與特徵價格模型 -->
+    <section class="slide" data-slide="2">
+      <div class="slide-content">
+        <div class="slide-eyebrow">Theoretical Framework ｜ 理論基石</div>
+        <h2 class="slide-title">交通可及性與特徵價格模型</h2>
+        <p class="slide-lead">經濟學家如何拆解一間房屋的價值？可以用「買便當」來做生活化比喻：</p>
+
+        <div class="two-col">
+          <div class="info-card">
+            <div class="card-label">概念一 ｜ 特徵價格理論 (Hedonic Pricing)</div>
+            <div class="card-title">買房子就像在便當店挑菜色</div>
+            <p class="card-text">特徵價格理論將房屋視為多種特徵的複合體，其總價由「建物特徵（坪數、屋齡）」、「鄰里環境（公園、學校）」與「交通區位」等隱含價格加總而成（林祖嘉與洪得洋 1999；黃麟雅 2017 分析基礎）。</p>
+          </div>
+          <div class="info-card highlight">
+            <div class="card-label">概念二 ｜ 交通可及性 (Accessibility)</div>
+            <div class="card-title">把「省下來的通勤時間」折現成房價</div>
+            <p class="card-text">捷運提供了準點、不受地面塞車干擾的移動能力。每天省下的 30～60 分鐘機會成本，在土地市場競爭下被「資本化（Capitalized）」為房屋溢價。</p>
+          </div>
+        </div>
+
+        <div class="diagram-box" style="margin-top:16px;">
+          <div style="font-size:0.9rem; font-weight:600; color:var(--text-main);">特徵價格公式直觀拆解：</div>
+          <div style="font-family:var(--font-serif); font-size:1.05rem; color:var(--gold-accent); letter-spacing:0.04em;">
+            房屋總價格 = 實體建物價值 ＋ 鄰里環境價值 ＋ <span style="text-decoration:underline;">交通可及性溢價 (捷運便利)</span>
+          </div>
+        </div>
+
+        <div class="citation-footer">
+          <strong>理論架構：</strong> 不動產特徵價格理論與交通可及性資本化（林祖嘉與洪得洋 1999、黃麟雅 2017 實證基礎）
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 3: 捷運距離與道路寬度 -->
+    <section class="slide" data-slide="3">
+      <div class="slide-content">
+        <div class="slide-eyebrow">Empirical Finding I ｜ 早期路網實證</div>
+        <h2 class="slide-title">捷運距離與道路寬度：兩大交通維度</h2>
+        <p class="slide-lead">政大林祖嘉、洪得洋（1999）早期實證，將交通便利性拆解為「個別出入」與「地區連通」：</p>
+
+        <div class="two-col">
+          <div class="info-card">
+            <div class="card-label">維度一 ｜ 地區間大眾運輸便利性</div>
+            <div class="card-title">距離捷運越近，房價顯著越高</div>
+            <p class="card-text">研究實證證實，在捷運站影響半徑內，房屋至捷運車站的實際距離與房屋單價呈統計顯著負相關（距離越近房價越高），且影響呈現向外遞減之趨勢。</p>
+          </div>
+          <div class="info-card">
+            <div class="card-label">維度二 ｜ 個別出入與街廓品質</div>
+            <div class="card-title">面臨道路寬度具有顯著正向貢獻</div>
+            <p class="card-text">房屋面臨的道路越寬，車輛出入、採光通風與棟距越佳，房價亦隨之顯著提升。商業使用房屋對路寬與捷運距離的邊際願付價格，顯著大於純住宅。</p>
+          </div>
+        </div>
+
+        <div class="diagram-box" style="margin-top:16px;">
+          <div class="card-title" style="font-size:0.95rem;">學術嚴謹性備忘 (Audit Note)</div>
+          <p class="card-text" style="font-size:0.85rem;">坊間評論曾引述「路寬每米增千元、影響半徑價差 2.5 萬」之說法；本專案嚴格查核政大官方摘要，官方摘要並未載明具體金額數值，故本簡報僅陳述經官方摘要確立之顯著方向性與相對關係。</p>
+        </div>
+
+        <div class="citation-footer">
+          <strong>文獻出處：</strong> 林祖嘉、洪得洋 (1999)《住宅學報》第 8 期 ｜ 
+          <span class="badge-limit">讀取範圍：僅依據官方公開摘要，排除未經證實之具體金額</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 4: 捷運信義線的實證案例 -->
+    <section class="slide" data-slide="4">
+      <div class="slide-content">
+        <div class="slide-eyebrow">Empirical Finding II ｜ 核心蛋黃線案例</div>
+        <h2 class="slide-title">捷運信義線的實證：距離圈層溢價</h2>
+        <p class="slide-lead">温弘裕（2015）以信義線通車後的實價登錄資料，聚焦高所得核心區（中正、大安、信義 8 個車站）分析：</p>
+
+        <div class="diagram-box">
+          <div style="font-size:0.85rem; font-weight:700; color:var(--text-muted); margin-bottom:4px;">
+            信義線周邊住宅單價增額（以「距離捷運站 500 公尺以上房屋」為比較基準群）：
+          </div>
+
+          <div class="zone-row">
+            <div class="zone-distance">0 ～ 250 公尺圈層</div>
+            <div class="zone-value">+ 26.051 萬元／㎡</div>
+            <div class="zone-note">相較基準群顯著增加（最高溢價圈）</div>
+          </div>
+
+          <div class="zone-row">
+            <div class="zone-distance">250 ～ 500 公尺圈層</div>
+            <div class="zone-value">+ 24.940 萬元／㎡</div>
+            <div class="zone-note">相較基準群顯著增加（溢價稍降但仍顯著）</div>
+          </div>
+
+          <div class="zone-row" style="border-left-color: var(--border-dark); opacity: 0.85;">
+            <div class="zone-distance">500 公尺以上區域</div>
+            <div class="zone-value" style="color:var(--text-muted); font-size:1rem;">比較基準群 (Baseline)</div>
+            <div class="zone-note">溢價效果明顯衰減收斂</div>
+          </div>
+        </div>
+
+        <div class="info-card highlight" style="margin-top:14px;">
+          <div class="card-label">重要概念釐清 ｜ 避免誤讀數據</div>
+          <p class="card-text">上述「26.051 萬元／㎡」為相對於 500m 以外住宅的<strong>邊際溢價差額</strong>，絕非房屋的平均成交單價！研究呈現類似水面漣漪向外遞減之規律，且侷限於台北市高價核心區。</p>
+        </div>
+
+        <div class="citation-footer">
+          <strong>文獻出處：</strong> 温弘裕 (2015) 政大行管碩學位論文 ｜ 
+          <span class="badge-limit">讀取範圍：僅依據官方摘要；禁止誤植為三期動態比較</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 5: 距離捷運越近一定越貴嗎？ -->
+    <section class="slide" data-slide="5">
+      <div class="slide-content">
+        <div class="slide-eyebrow">Critical Reexamination ｜ 批判性再檢視</div>
+        <h2 class="slide-title">距離捷運越近，房價就一定越高嗎？</h2>
+        <p class="slide-lead">戴國正（2011）在張金鶚、江穎慧指導下對捷運效益進行深化「再檢視」，破除均勻大漲迷思：</p>
+
+        <div class="three-col">
+          <div class="info-card">
+            <div class="card-label">核心發現 1</div>
+            <div class="card-title">空間異質性 (Spatial Heterogeneity)</div>
+            <p class="card-text">捷運資本化效果並非在全都會區均勻一致，房價對捷運的邊際反應，深受所在行政區與鄰里環境背景調節。</p>
+          </div>
+          <div class="info-card">
+            <div class="card-label">核心發現 2</div>
+            <div class="card-title">車站機能類型差異</div>
+            <p class="card-text">多線交會之「核心轉乘站」與末端路網之「一般端點站」，對周邊不動產產生的牽引與增值能力存在顯著級距差異。</p>
+          </div>
+          <div class="info-card">
+            <div class="card-label">核心發現 3</div>
+            <div class="card-title">整體趨勢 ≠ 個別保證</div>
+            <p class="card-text">平均統計上的溢價規律，無法直接推導至每一個物件。若微觀出入狹窄或區位條件不佳，個別物件未必能享有相同溢價。</p>
+          </div>
+        </div>
+
+        <div class="diagram-box" style="margin-top:16px;">
+          <div class="card-title" style="font-size:0.95rem;">學術誠信警語</div>
+          <p class="card-text" style="font-size:0.85rem;">本論文摘要重點為空間計量架構下之異質性檢定，摘要中並未提供噪音或擁擠損害之實證量化數據；本知識庫不主觀臆測負外部性為該篇之實證結果。</p>
+        </div>
+
+        <div class="citation-footer">
+          <strong>文獻出處：</strong> 戴國正 (2011) 政大地政所學位論文 ｜ 
+          <span class="badge-limit">讀取範圍：僅依據官方摘要；不捏造噪音擁擠數據</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 6: 影響房價的不只有捷運 -->
+    <section class="slide" data-slide="6">
+      <div class="slide-content">
+        <div class="slide-eyebrow">Comprehensive Attributes ｜ 鄰里環境與設施</div>
+        <h2 class="slide-title">影響房價的，遠遠不只有捷運距離</h2>
+        <p class="slide-lead">政大黃麟雅（2017）探討臺北市生活設施水準，證實多種公共機能共同塑造住宅價值：</p>
+
+        <div class="two-col">
+          <div class="info-card">
+            <div class="card-label">最強兩大推動力</div>
+            <div class="card-title">捷運便利性 ＋ 公園開放空間</div>
+            <p class="card-text">實證發現，在各類公共設施中，代表交通的「捷運站距離」與代表環境品質的「主題公園開放空間」，對臺北市住宅總價正向影響最為顯著。</p>
+          </div>
+          <div class="info-card">
+            <div class="card-label">分量迴歸發現</div>
+            <div class="card-title">不同總價次市場之偏好分化</div>
+            <p class="card-text">
+              • <strong>低總價住宅</strong>：受日常民生機能與公園影響最直接。<br>
+              • <strong>高總價住宅</strong>：對日常便利機能敏感度較低，更重文教資源、特定開闊空間與環境隱密性。
+            </p>
+          </div>
+        </div>
+
+        <div class="three-col" style="margin-top:14px;">
+          <div class="info-card" style="padding:14px;">
+            <div style="font-weight:700; font-size:0.9rem;">🌳 公園綠地</div>
+            <div style="font-size:0.82rem; color:var(--text-muted);">提供休閒運動與開闊視野景觀</div>
+          </div>
+          <div class="info-card" style="padding:14px;">
+            <div style="font-weight:700; font-size:0.9rem;">🏫 優質文教</div>
+            <div style="font-size:0.82rem; color:var(--text-muted);">明星學區對中高價住宅具高資本化</div>
+          </div>
+          <div class="info-card" style="padding:14px;">
+            <div style="font-weight:700; font-size:0.9rem;">🏥 醫療與日照</div>
+            <div style="font-size:0.82rem; color:var(--text-muted);">銀髮與家庭族群之關鍵考量指標</div>
+          </div>
+        </div>
+
+        <div class="citation-footer">
+          <strong>文獻出處：</strong> 黃麟雅 (2017) 政大地政學系學位論文 ｜ 
+          <span class="badge-limit">讀取範圍：僅依據官方摘要；非環狀線或聯開宅研究</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 7: 交通政策也會改變住宅市場 -->
+    <section class="slide" data-slide="7">
+      <div class="slide-content">
+        <div class="slide-eyebrow">Policy Capitalization ｜ 定期票與價格重塑</div>
+        <h2 class="slide-title">交通政策也能重塑住宅市場結構</h2>
+        <p class="slide-lead">政大陳品睿（2025）研究雙北 2018 年推行的「1280 公共運輸定期票」政策：</p>
+
+        <div class="two-col">
+          <div class="info-card">
+            <div class="card-label">經濟學傳導機制</div>
+            <div class="card-title">通勤邊際貨幣成本封頂</div>
+            <p class="card-text">依都市經濟學理論，家戶在「市中心高房價/低通勤費」與「外圍平價/高通勤費」間取捨。每月 1,280 元吃到飽大幅降低了遠程通勤者的邊際開銷。</p>
+          </div>
+          <div class="info-card highlight">
+            <div class="card-label">實證核心發現</div>
+            <div class="card-title">空間分布與價格結構之重塑</div>
+            <p class="card-text">政策並非齊頭式推升所有房屋價格，而是促使中低總價購屋者往具捷運可及性的外圍節點重新分配，重塑了都會區內部的價格梯度。</p>
+          </div>
+        </div>
+
+        <div class="diagram-box" style="margin-top:16px;">
+          <div class="card-title" style="font-size:0.95rem;">概念辨析：實證發現 vs 經濟機制</div>
+          <p class="card-text" style="font-size:0.85rem;">
+            • <strong>經濟機制（Hypothesis）</strong>：降低通勤支出 → 增加外圍居住吸引力。<br>
+            • <strong>實證重點（Finding）</strong>：不同價格層與區位之結構差異，而非概括推論交通便利必然讓「全體房價齊頭上漲」。
+          </p>
+        </div>
+
+        <div class="citation-footer">
+          <strong>文獻出處：</strong> 陳品睿 (2025) 政大地政學系碩士論文 ｜ 
+          <span class="badge-limit">研究標的為雙北 1280 定期票，不改稱為 TPASS</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 8: 互動小測驗 -->
+    <section class="slide" data-slide="8">
+      <div class="slide-content">
+        <div class="slide-eyebrow">Interactive Check ｜ 觀念小測驗</div>
+        <h2 class="slide-title">觀念理解小檢測</h2>
+        <p class="slide-lead">透過兩道即時回饋選擇題，檢驗剛剛學到的不動產實證觀念：</p>
+
+        <!-- Question 1 -->
+        <div class="quiz-question-block" id="quizBlock1">
+          <div class="question-title">Q1. 根據温弘裕（2015）研究，距捷運信義線 250 公尺內增加「26.051 萬元／㎡」，這項數據代表什麼含義？</div>
+          <div class="quiz-options">
+            <button class="quiz-btn" onclick="checkQuiz(1, 'A', this)">
+              <span>(A)</span> 信義線周邊房屋每平方公尺的平均成交單價
+            </button>
+            <button class="quiz-btn" onclick="checkQuiz(1, 'B', this)">
+              <span>(B)</span> 相較於距離捷運站 500 公尺以上房屋的「相對邊際溢價差額」
+            </button>
+            <button class="quiz-btn" onclick="checkQuiz(1, 'C', this)">
+              <span>(C)</span> 信義線通車前與通車後的房價漲幅百分比
+            </button>
+          </div>
+          <div class="quiz-feedback" id="feedback1"></div>
+        </div>
+
+        <!-- Question 2 -->
+        <div class="quiz-question-block" id="quizBlock2">
+          <div class="question-title">Q2. 關於「捷運站周邊房價一定均等大漲」的說法，下列哪一項最符合學術實證的觀點？</div>
+          <div class="quiz-options">
+            <button class="quiz-btn" onclick="checkQuiz(2, 'A', this)">
+              <span>(A)</span> 戴國正（2011）證實捷運效益具「空間異質性」，受行政區位與車站類型調節
+            </button>
+            <button class="quiz-btn" onclick="checkQuiz(2, 'B', this)">
+              <span>(B)</span> 只要距離捷運站 500 公尺以內，全台灣所有站點的房價漲幅完全相同
+            </button>
+            <button class="quiz-btn" onclick="checkQuiz(2, 'C', this)">
+              <span>(C)</span> 戴國正（2011）實證數據證實噪音與擁擠一定會抵銷所有捷運便利效益
+            </button>
+          </div>
+          <div class="quiz-feedback" id="feedback2"></div>
+        </div>
+
+        <div class="citation-footer">
+          <strong>互動提示：</strong> 點選選項即可查看判斷結果與詳細解析
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 9: 如何運用這些知識？ -->
+    <section class="slide" data-slide="9">
+      <div class="slide-content">
+        <div class="slide-eyebrow">Actionable Insights ｜ 生活決策指南</div>
+        <h2 class="slide-title">如何運用這些知識？租購決策四步檢視法</h2>
+        <p class="slide-lead">將學術實證轉化為青年租屋與首購族的生活化判斷架構：</p>
+
+        <div class="two-col">
+          <div class="info-card">
+            <div class="card-label">步驟 1 ｜ 衡量自身時間價值</div>
+            <div class="card-title">「省下的時間」是否值這筆溢價？</div>
+            <p class="card-text">計算每月為了近捷運多付的租金/房貸差額，除以每月省下的通勤時數。若每小時通勤成本代價遠高於你的時薪，選擇 500m～800m 圈層往往性價比更高。</p>
+          </div>
+          <div class="info-card">
+            <div class="card-label">步驟 2 ｜ 檢查微觀臨路寬度</div>
+            <div class="card-title">別被「直線距離」所蒙蔽</div>
+            <p class="card-text">依林祖嘉 (1999) 實證，道路寬度關乎個別出入與採光通風。緊鄰站體但身處窄仄陰暗死巷的物件，日後轉手性與居住舒適度會大打折扣。</p>
+          </div>
+          <div class="info-card">
+            <div class="card-label">步驟 3 ｜ 辨識車站機能類型</div>
+            <div class="card-title">轉乘樞紐 vs 一般端點站</div>
+            <p class="card-text">依戴國正 (2011) 實證，不同站點溢價能力不同。若需要頻繁跨線換乘，雙捷交會站具備更高可及性；若僅需定點通勤，端點站周邊可能更為平價舒適。</p>
+          </div>
+          <div class="info-card">
+            <div class="card-label">步驟 4 ｜ 檢視公園與公共設施</div>
+            <div class="card-title">交通不是生活的全部</div>
+            <p class="card-text">依黃麟雅 (2017) 實證，開放空間（公園）同屬關鍵正向指標。低總價物件若能兼顧日常採買與綠地，抗跌與宜居程度將顯著提升。</p>
+          </div>
+        </div>
+
+        <div class="citation-footer">
+          <strong>邊界說明：</strong> 清楚區分「學術計量實證結論」與「消費者生活化實用決策建議」
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 10: 這份簡報如何由 LLM Wiki 生成？ -->
+    <section class="slide" data-slide="10">
+      <div class="slide-content">
+        <div class="slide-eyebrow">Meta-Methodology ｜ LLM Wiki 實踐</div>
+        <h2 class="slide-title">這份簡報如何由 LLM Wiki 嚴謹生成？</h2>
+        <p class="slide-lead">實踐 Andrej Karpathy 的 LLM Wiki 理念：以純 Markdown 為可持續演化知識庫，無黑盒子向量資料庫：</p>
+
+        <!-- Process Flow -->
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="flow-num">STEP 1</div>
+            <div class="flow-label">Ingest 匯入</div>
+            <div class="flow-desc">讀取政大學術典藏，忠實記錄標題、作者與「僅依據摘要」之讀取邊界。</div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">STEP 2</div>
+            <div class="flow-label">Wiki 整理</div>
+            <div class="flow-desc">概念分流（Concepts）、實證分流（Empirical），建立雙向語義鏈結。</div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">STEP 3</div>
+            <div class="flow-label">Lint 審查</div>
+            <div class="flow-desc">自動化稽核來源斷鏈、數據真實性與四大禁令；有錯立即觸發回饋回退。</div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">STEP 4</div>
+            <div class="flow-label">Query 檢索</div>
+            <div class="flow-desc">嚴格閉環 QA 壓力測試，確保所有問題皆能溯源至原始文獻依據。</div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">STEP 5</div>
+            <div class="flow-label">HTML 生成</div>
+            <div class="flow-desc">對照追溯矩陣產出可互動簡報，經全方位功能與排版驗證後發布。</div>
+          </div>
+        </div>
+
+        <div class="card-title" style="font-size:0.95rem; margin-top:16px;">五篇政大學術集成原始文獻來源：</div>
+        <div class="source-link-list">
+          <div class="source-link-item">
+            <span>[1] 林祖嘉、洪得洋 (1999) 臺北市捷運系統與道路寬度對房屋價格影響之研究</span>
+            <a href="https://ah.lib.nccu.edu.tw/item?item_id=39107" target="_blank" rel="noopener">Item 39107 ↗</a>
+          </div>
+          <div class="source-link-item">
+            <span>[2] 温弘裕 (2015) 大眾運輸系統對房價的影響-以台北捷運信義線為例</span>
+            <a href="https://ah.lib.nccu.edu.tw/item?item_id=88427" target="_blank" rel="noopener">Item 88427 ↗</a>
+          </div>
+          <div class="source-link-item">
+            <span>[3] 戴國正 (2011) 大眾捷運系統對房價影響效果之再檢視</span>
+            <a href="https://ah.lib.nccu.edu.tw/item?item_id=62426" target="_blank" rel="noopener">Item 62426 ↗</a>
+          </div>
+          <div class="source-link-item">
+            <span>[4] 黃麟雅 (2017) 臺北市生活設施水準對住宅價格之影響</span>
+            <a href="https://ah.lib.nccu.edu.tw/item?item_id=127669" target="_blank" rel="noopener">Item 127669 ↗</a>
+          </div>
+          <div class="source-link-item">
+            <span>[5] 陳品睿 (2025) 雙北「1280公共運輸定期票」與住宅市場價格結構及空間分布</span>
+            <a href="https://ah.lib.nccu.edu.tw/item?item_id=178543" target="_blank" rel="noopener">Item 178543 ↗</a>
+          </div>
+        </div>
+
+        <div class="citation-footer" style="margin-top:14px;">
+          <strong>透明性聲明：</strong> 原始文獻因資料庫權限均標記為「僅依據摘要」，本專案無任何虛構數據。
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer & Controls -->
+  <footer>
+    <div class="dots-container" id="dotsContainer"></div>
+    <div class="nav-controls">
+      <button class="btn-nav" id="btnPrev" onclick="navigateSlide(-1)" disabled>
+        ← 上一頁
+      </button>
+      <button class="btn-nav" id="btnNext" onclick="navigateSlide(1)">
+        下一頁 →
+      </button>
+    </div>
+  </footer>
+
+  <script>
+    // State
+    const totalSlides = 10;
+    let currentSlide = 1;
+
+    // Elements
+    const slides = document.querySelectorAll('.slide');
+    const dotsContainer = document.getElementById('dotsContainer');
+    const progressBar = document.getElementById('progressBar');
+    const slideCounter = document.getElementById('slideCounter');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+
+    // Initialize Indicator Dots
+    function initDots() {
+      dotsContainer.innerHTML = '';
+      for (let i = 1; i <= totalSlides; i++) {
+        const dot = document.createElement('div');
+        dot.className = `dot ${i === 1 ? 'active' : ''}`;
+        dot.title = `跳至第 ${i} 頁`;
+        dot.onclick = () => goToSlide(i);
+        dotsContainer.appendChild(dot);
+      }
+    }
+
+    // Update UI on Slide Change
+    function updateSlideUI() {
+      // Toggle active slide
+      slides.forEach(slide => {
+        const slideIndex = parseInt(slide.getAttribute('data-slide'), 10);
+        if (slideIndex === currentSlide) {
+          slide.classList.add('active');
+        } else {
+          slide.classList.remove('active');
+        }
+      });
+
+      // Update dots
+      const dots = dotsContainer.querySelectorAll('.dot');
+      dots.forEach((dot, idx) => {
+        dot.classList.toggle('active', idx + 1 === currentSlide);
+      });
+
+      // Update progress bar
+      const progressPercent = (currentSlide / totalSlides) * 100;
+      progressBar.style.width = `${progressPercent}%`;
+
+      // Update counter
+      slideCounter.textContent = `${String(currentSlide).padStart(2, '0')} / ${String(totalSlides).padStart(2, '0')}`;
+
+      // Update buttons
+      btnPrev.disabled = (currentSlide === 1);
+      btnNext.disabled = (currentSlide === totalSlides);
+      btnNext.textContent = (currentSlide === totalSlides) ? '已達末頁' : '下一頁 →';
+    }
+
+    function navigateSlide(direction) {
+      const newSlide = currentSlide + direction;
+      if (newSlide >= 1 && newSlide <= totalSlides) {
+        currentSlide = newSlide;
+        updateSlideUI();
+      }
+    }
+
+    function goToSlide(slideNum) {
+      if (slideNum >= 1 && slideNum <= totalSlides) {
+        currentSlide = slideNum;
+        updateSlideUI();
+      }
+    }
+
+    // Keyboard Navigation
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        if (currentSlide < totalSlides) {
+          e.preventDefault();
+          navigateSlide(1);
+        }
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        if (currentSlide > 1) {
+          e.preventDefault();
+          navigateSlide(-1);
+        }
+      }
+    });
+
+    // Interactive Quiz Logic for Slide 8
+    const quizAnswers = {
+      1: {
+        correct: 'B',
+        explanations: {
+          'A': '❌ 錯誤。26.051 萬元/㎡ 是「相對增額」，若誤認為每坪平均成交總價將嚴重低估或扭曲不動產實情。',
+          'B': '✅ 完全正確！温弘裕（2015）研究明確以「距離捷運站 500 公尺以上房屋」為比較基準群，此數據代表 250m 內相較於基準群的邊際溢價差額。',
+          'C': '❌ 錯誤。該研究並非通車前後的時間縱向比較研究，而是通車後各距離圈層的橫斷面實價登錄圈層分析。'
+        }
+      },
+      2: {
+        correct: 'A',
+        explanations: {
+          'A': '✅ 完全正確！戴國正（2011）研究證實捷運資本化效果存在顯著「空間異質性」，捷運溢價深受行政區位條件與車站機能等級調節，並非同質均等。',
+          'B': '❌ 錯誤。各都會區、行政區與車站類型存在巨大落差，絕非全台齊頭均等上漲。',
+          'C': '❌ 錯誤。戴國正（2011）官方摘要著重空間計量與異質性檢定，未提供噪音擁擠之損害數據，不可主觀妄斷。'
+        }
+      }
+    };
+
+    function checkQuiz(qNum, selectedOption, btnElement) {
+      const block = document.getElementById(`quizBlock${qNum}`);
+      const feedback = document.getElementById(`feedback${qNum}`);
+      const buttons = block.querySelectorAll('.quiz-btn');
+      const qData = quizAnswers[qNum];
+
+      // Mark buttons
+      buttons.forEach(btn => {
+        btn.classList.remove('correct', 'incorrect');
+        btn.classList.add('disabled');
+      });
+
+      const isCorrect = (selectedOption === qData.correct);
+      if (btnElement) {
+        btnElement.classList.add(isCorrect ? 'correct' : 'incorrect');
+      }
+
+      // Highlight the correct button if user selected wrong
+      if (!isCorrect) {
+        buttons.forEach(btn => {
+          if (btn.textContent.includes(`(${qData.correct})`)) {
+            btn.classList.add('correct');
+          }
+        });
+      }
+
+      // Show feedback
+      feedback.textContent = qData.explanations[selectedOption];
+      feedback.className = `quiz-feedback ${isCorrect ? 'show-correct' : 'show-incorrect'}`;
+    }
+
+    // Init
+    initDots();
+    updateSlideUI();
+  </script>
+</body>
+</html>
